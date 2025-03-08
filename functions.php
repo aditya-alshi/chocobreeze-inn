@@ -213,7 +213,7 @@ require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-functions.php';
 
 // ------------------------- Other custom ----------------------------------------
 
-//This function disabled the redirection for category specific products
+// Disable product links for selected categories
 function disable_product_links_for_selected_categories() {
     global $product;
 
@@ -228,14 +228,12 @@ function disable_product_links_for_selected_categories() {
 }
 add_action('woocommerce_before_shop_loop_item', 'disable_product_links_for_selected_categories', 5);
 
-// this code replaces the add to cart button with select-tray button
+// Replace add to cart button with "Select Tray" for Trays
 function add_select_tray_button() {
     global $product;
 
-    // Only apply for trays
     if (has_term('tray', 'product_cat', $product->get_id())) {
         $product_id = $product->get_id();
-
         echo '<button class="select-tray-button" data-id="' . esc_attr($product_id) . '">
                 Select This Tray
               </button>';
@@ -255,7 +253,9 @@ function add_select_chocolate_button() {
               </button>';
     }
 }
+remove_action('woocommerce_after_shop_loop_item', 'woocommerce_template_loop_add_to_cart', 10);
 add_action('woocommerce_after_shop_loop_item', 'add_select_chocolate_button', 10);
+
 
 // ----------------------------------------Testing short code-----------------------------------------------------------
 // ----------------------------------------This code is responsible for extracting the cavity information for respective trays.  ----------------
@@ -325,6 +325,219 @@ add_action('woocommerce_after_shop_loop_item', 'add_select_chocolate_button', 10
 // ------- new This code is responsible for extracting the cavity information for respective trays.------
 
 
+// function extract_cavity_data() {
+//     if (!isset($_GET['tray']) || !isset($_GET['quantity'])) {
+//         return 'Missing tray or quantity parameter.';
+//     }
+
+//     $tray_id = intval($_GET['tray']);
+//     $tray_product = wc_get_product($tray_id);
+//     if (!$tray_product) {
+//         return 'Invalid tray product ID.';
+//     }
+
+//     $tray_description = $tray_product->get_description();
+//     preg_match_all('/(\d+\*\d+)_([0-9]+)Qty/', $tray_description, $matches, PREG_SET_ORDER);
+
+//     if (empty($matches)) {
+//         return 'No cavity size data found.';
+//     }
+
+//     $cavities = [];
+//     foreach ($matches as $match) {
+//         $cavities[$match[1]] = intval($match[2]); // Cavity size => Quantity
+//     }
+
+//     $chocolate_products = wc_get_products([
+//         'limit' => -1,
+//         'status' => 'publish',
+//         'type' => 'simple',
+//     ]);
+
+//     $chocolate_data = [];
+
+//     foreach ($chocolate_products as $chocolate) {
+//         $description = $chocolate->get_description();
+//         if (preg_match('/Fits_Cavity:\s*(\d+)x(\d+)x\d+/i', $description, $choco_match)) {
+//             $fits_cavity = $choco_match[1] . '*' . $choco_match[2]; // Convert format from 31x31 to 31*31
+            
+//             if (!isset($chocolate_data[$fits_cavity])) {
+//                 $chocolate_data[$fits_cavity] = [];
+//             }
+
+//             $chocolate_data[$fits_cavity][] = $chocolate->get_id(); // Store Product ID
+//         }
+//     }
+
+//     // Generate WooCommerce Product Display
+//     $output = '<div class="cavity-container">';
+
+//     foreach ($cavities as $size => $quantity) {
+//         $output .= '<div class="cavity-group">';
+//         $output .= '<h3>Cavity Size: ' . esc_html($size) . ' - Quantity: ' . esc_html($quantity) . '</h3>';
+
+//         if (!empty($chocolate_data[$size])) {
+//             // Get chocolates for cavities (repeat if necessary)
+//             $available_chocolates = $chocolate_data[$size];
+//             $chocolates_for_cavities = [];
+
+//             for ($i = 0; $i < $quantity; $i++) {
+//                 $chocolates_for_cavities[] = $available_chocolates[$i % count($available_chocolates)];
+//             }
+
+//             // Convert product IDs into a WooCommerce shortcode
+//             $product_ids = implode(',', $chocolates_for_cavities);
+//             $output .= do_shortcode('[products ids="' . esc_attr($product_ids) . '"]');
+
+//         } else {
+//             $output .= '<p>No chocolates found for this cavity size.</p>';
+//         }
+
+//         $output .= '</div>'; // Close cavity-group
+//     }
+
+//     $output .= '</div>'; // Close cavity-container
+
+//     return $output;
+// }
+// add_shortcode('cavity_info', 'extract_cavity_data');
+
+
+// ------- new -v2 This code is responsible for extracting the cavity information for respective trays.------
+// function extract_cavity_data() {
+//     if (!isset($_GET['tray']) || !isset($_GET['quantity'])) {
+//         return 'Missing tray or quantity parameter.';
+//     }
+
+//     $tray_id = intval($_GET['tray']);
+//     $tray_product = wc_get_product($tray_id);
+//     if (!$tray_product) {
+//         return 'Invalid tray product ID.';
+//     }
+
+//     $tray_description = $tray_product->get_description();
+//     preg_match_all('/(\d+\*\d+)_([0-9]+)Qty/', $tray_description, $matches, PREG_SET_ORDER);
+
+//     if (empty($matches)) {
+//         return 'No cavity size data found.';
+//     }
+
+//     $cavities = [];
+//     foreach ($matches as $match) {
+//         $cavities[$match[1]] = intval($match[2]); // Cavity size => Quantity
+//     }
+
+//     $chocolate_products = wc_get_products([
+//         'limit' => -1,
+//         'status' => 'publish',
+//         'type' => 'simple',
+//     ]);
+
+//     $chocolate_data = [];
+
+//     foreach ($chocolate_products as $chocolate) {
+//         $description = $chocolate->get_description();
+//         if (preg_match('/Fits_Cavity:\s*(\d+)x(\d+)x\d+/i', $description, $choco_match)) {
+//             $fits_cavity = $choco_match[1] . '*' . $choco_match[2]; // Convert format from 31x31 to 31*31
+            
+//             if (!isset($chocolate_data[$fits_cavity])) {
+//                 $chocolate_data[$fits_cavity] = [];
+//             }
+
+//             $chocolate_data[$fits_cavity][] = [
+//                 'id' => $chocolate->get_id(),
+//                 'name' => $chocolate->get_name(),
+//                 'image' => wp_get_attachment_image_src($chocolate->get_image_id(), 'thumbnail')[0]
+//             ];
+//         }
+//     }
+
+//     // Generate the HTML
+//     $output = '<div class="cavity-container">';
+
+//     foreach ($cavities as $size => $quantity) {
+//         $output .= '<div class="cavity-group">';
+//         $output .= '<h3>Cavity Size: ' . esc_html($size) . ' - Quantity Required: ' . esc_html($quantity) . '</h3>';
+
+//         if (!empty($chocolate_data[$size])) {
+//             $output .= '<div class="chocolate-options" data-size="' . esc_attr($size) . '" data-quantity="' . esc_attr($quantity) . '">';
+            
+//             foreach ($chocolate_data[$size] as $choco) {
+//                 $output .= '<div class="chocolate-item" data-id="' . esc_attr($choco['id']) . '">';
+//                 $output .= '<img src="' . esc_url($choco['image']) . '" alt="' . esc_attr($choco['name']) . '" />';
+//                 $output .= '<p>' . esc_html($choco['name']) . '</p>';
+//                 $output .= '<input type="number" class="choco-quantity" min="0" max="' . esc_attr($quantity) . '" value="0" />';
+//                 $output .= '</div>';
+//             }
+
+//             $output .= '</div>'; // Close chocolate-options
+//         } else {
+//             $output .= '<p>No chocolates found for this cavity size.</p>';
+//         }
+
+//         $output .= '</div>'; // Close cavity-group
+//     }
+
+//     $output .= '<button id="proceed-button" disabled>Proceed to Packaging</button>';
+//     $output .= '</div>'; // Close cavity-container
+
+//     // Add JavaScript for validation
+//     $output .= '<script>
+//     document.addEventListener("DOMContentLoaded", function() {
+//         document.querySelectorAll(".chocolate-options").forEach(function(optionGroup) {
+//             let requiredQuantity = parseInt(optionGroup.dataset.quantity);
+//             let inputs = optionGroup.querySelectorAll(".choco-quantity");
+
+//             function validateSelection() {
+//                 let selectedTotal = 0;
+//                 inputs.forEach(input => selectedTotal += parseInt(input.value) || 0);
+
+//                 if (selectedTotal === requiredQuantity) {
+//                     optionGroup.classList.add("valid");
+//                 } else {
+//                     optionGroup.classList.remove("valid");
+//                 }
+//                 checkOverallValidation();
+//             }
+
+//             inputs.forEach(input => {
+//                 input.addEventListener("input", validateSelection);
+//             });
+
+//             function checkOverallValidation() {
+//                 let allValid = document.querySelectorAll(".chocolate-options.valid").length === document.querySelectorAll(".chocolate-options").length;
+//                 document.getElementById("proceed-button").disabled = !allValid;
+//             }
+//         });
+
+//         document.getElementById("proceed-button").addEventListener("click", function() {
+//             let selectedChocolates = [];
+
+//             document.querySelectorAll(".chocolate-item").forEach(item => {
+//                 let quantity = parseInt(item.querySelector(".choco-quantity").value) || 0;
+//                 if (quantity > 0) {
+//                     selectedChocolates.push({
+//                         id: item.dataset.id,
+//                         quantity: quantity
+//                     });
+//                 }
+//             });
+
+//             let trayId = new URL(window.location.href).searchParams.get("tray");
+//             let nextPage = "http://localhost:8080/wordpress/packaging";
+//             let newUrl = `${nextPage}?tray=${trayId}&chocolates=` + encodeURIComponent(JSON.stringify(selectedChocolates));
+
+//             window.location.href = newUrl;
+//         });
+//     });
+//     </script>';
+
+//     return $output;
+// }
+// add_shortcode('cavity_info', 'extract_cavity_data');
+
+// ------- new -v3 This code is responsible for extracting the cavity information for respective trays.------
+
 function extract_cavity_data() {
     if (!isset($_GET['tray']) || !isset($_GET['quantity'])) {
         return 'Missing tray or quantity parameter.';
@@ -365,41 +578,48 @@ function extract_cavity_data() {
                 $chocolate_data[$fits_cavity] = [];
             }
 
-            $chocolate_data[$fits_cavity][] = $chocolate->get_id(); // Store Product ID
+            $chocolate_data[$fits_cavity][] = [
+                'id' => $chocolate->get_id(),
+                'name' => $chocolate->get_name(),
+                'image' => get_the_post_thumbnail_url($chocolate->get_id(), 'thumbnail'),
+            ]; 
         }
     }
 
-    // Generate WooCommerce Product Display
+    // Generate Chocolate Selection UI
     $output = '<div class="cavity-container">';
-
+    
     foreach ($cavities as $size => $quantity) {
         $output .= '<div class="cavity-group">';
         $output .= '<h3>Cavity Size: ' . esc_html($size) . ' - Quantity: ' . esc_html($quantity) . '</h3>';
+        $output .= '<div class="chocolate-selection">';
 
         if (!empty($chocolate_data[$size])) {
-            // Get chocolates for cavities (repeat if necessary)
-            $available_chocolates = $chocolate_data[$size];
-            $chocolates_for_cavities = [];
-
+            // Display selection slots
             for ($i = 0; $i < $quantity; $i++) {
-                $chocolates_for_cavities[] = $available_chocolates[$i % count($available_chocolates)];
+                $output .= '<div class="cavity-slot">';
+                $output .= '<label>Cavity ' . ($i + 1) . '</label>';
+                $output .= '<select class="chocolate-dropdown" data-cavity="'. $size .'" data-slot="'. $i .'">';
+                $output .= '<option value="">Select Chocolate</option>';
+
+                foreach ($chocolate_data[$size] as $choco) {
+                    $output .= '<option value="' . esc_attr($choco['id']) . '">' . esc_html($choco['name']) . '</option>';
+                }
+
+                $output .= '</select>';
+                $output .= '</div>'; // Close cavity-slot
             }
-
-            // Convert product IDs into a WooCommerce shortcode
-            $product_ids = implode(',', $chocolates_for_cavities);
-            $output .= do_shortcode('[products ids="' . esc_attr($product_ids) . '"]');
-
         } else {
             $output .= '<p>No chocolates found for this cavity size.</p>';
         }
 
+        $output .= '</div>'; // Close chocolate-selection
         $output .= '</div>'; // Close cavity-group
     }
 
+    $output .= '<button id="save-next-button">Save & Next</button>';
     $output .= '</div>'; // Close cavity-container
 
     return $output;
 }
 add_shortcode('cavity_info', 'extract_cavity_data');
-
-
